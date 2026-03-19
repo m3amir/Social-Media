@@ -87,7 +87,7 @@ def _build_batched_queries() -> list[dict]:
 def _format_query(terms: list[str]) -> str:
     """Format search terms into an X API query string."""
     joined = " OR ".join(terms)
-    return f"({joined}) -is:retweet lang:en"
+    return f"({joined}) -is:retweet -is:reply lang:en"
 
 
 def _classify_topic(text: str, topics_map: dict) -> str:

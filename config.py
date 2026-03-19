@@ -27,8 +27,8 @@ TRACKED_TOPICS = [
     {
         "name": "Revenue Milestones",
         "terms": [
-            '"hit $"', '"crossed $"', '"reached $"',
-            '"MRR"', '"monthly recurring"',
+            '"hit $" MRR', '"crossed $"', '"reached $" revenue',
+            '"MRR" milestone', '"monthly recurring revenue"',
             '"first sale"', '"first revenue"',
         ],
     },
@@ -37,17 +37,18 @@ TRACKED_TOPICS = [
         "name": "Paying Customers",
         "terms": [
             '"paying user"', '"paying customer"',
-            '"first customer"', '"first user"',
-            '"signed up"', '"converted"',
+            '"first customer"', '"first paying"',
+            '"first 100 users"', '"first 10 users"',
         ],
     },
     # ── Founder Questions — "what's the best way to..." ─────────────
     {
         "name": "Founder Questions",
         "terms": [
-            '"as a founder"', '"best way to get"',
-            '"how do you get"', '"how did you get"',
-            '"what\'s your strategy"', '"any advice on"',
+            '"as a founder"', '"best way to get users"',
+            '"how do you find customers"',
+            '"how did you get your first"',
+            '"any advice for founders"',
         ],
     },
     # ── Growth & Traction — organic growth stories ──────────────────
@@ -55,8 +56,8 @@ TRACKED_TOPICS = [
         "name": "Growth & Traction",
         "terms": [
             '"ramen profitable"', '"product market fit"',
-            '"growing fast"', '"growth is"',
-            '"users in"', '"customers in"',
+            '"growing MRR"', '"revenue milestone"',
+            '"ARR"', '"growth update"',
         ],
     },
     # ── Building in Public — updates without hashtags ───────────────
@@ -64,26 +65,26 @@ TRACKED_TOPICS = [
         "name": "Build in Public",
         "terms": [
             '"building in public"', '"build in public"',
-            '"shipped"', '"just launched"',
-            '"working on"', '"side project"',
+            '"just shipped" feature', '"launched my"',
+            '"side project" revenue', '"indie maker"',
         ],
     },
     # ── Startup Struggles — relatable founder pain ──────────────────
     {
         "name": "Startup Struggles",
         "terms": [
-            '"biggest mistake"', '"wish I knew"',
-            '"lessons learned"', '"almost gave up"',
-            '"hardest part of"', '"founder life"',
+            '"biggest mistake" startup', '"wish I knew" founder',
+            '"lessons learned" startup', '"almost gave up"',
+            '"hardest part" building', '"founder burnout"',
         ],
     },
     # ── SaaS Tactics — strategy posts that invite discussion ────────
     {
         "name": "SaaS Tactics",
         "terms": [
-            '"cold DMs"', '"cold email"',
-            '"content marketing"', '"SEO for"',
-            '"pricing strategy"', '"churn rate"',
+            '"cold outreach"', '"cold DMs" customers',
+            '"pricing strategy" SaaS', '"churn rate"',
+            '"customer acquisition"', '"conversion rate" SaaS',
         ],
     },
     # ── Indie Hacker Wins — small victories, relatable posts ────────
@@ -91,8 +92,8 @@ TRACKED_TOPICS = [
         "name": "Indie Hacker Wins",
         "terms": [
             '"solo founder"', '"indie hacker"',
-            '"bootstrapped"', '"no funding"',
-            '"quit my job"', '"side hustle"',
+            '"bootstrapped to"', '"no VC" funding',
+            '"quit my job" startup', '"side hustle" revenue',
         ],
     },
 ]

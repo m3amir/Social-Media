@@ -82,6 +82,15 @@ def init_db():
     logger.info("Database initialized at %s", config.DB_PATH)
 
 
+def reset_db():
+    """Clear all posts, scrape state, and credit logs for a fresh start."""
+    with _get_db() as conn:
+        conn.execute("DELETE FROM posts")
+        conn.execute("DELETE FROM scrape_state")
+        conn.execute("DELETE FROM credit_log")
+    logger.info("Database reset — all posts and state cleared")
+
+
 def get_since_id(batch_name: str) -> str | None:
     """Get the newest tweet ID we've seen for a batch, for incremental fetching."""
     with _get_db() as conn:

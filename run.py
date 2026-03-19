@@ -18,7 +18,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import config
-from scraper.storage import init_db, save_posts
+from scraper.storage import init_db, save_posts, reset_db
 from scraper.nitter import scrape_all_topics
 
 logging.basicConfig(
@@ -80,11 +80,18 @@ def main():
     parser = argparse.ArgumentParser(description="X Engagement Scraper Agent")
     parser.add_argument("--scrape", action="store_true", help="Run a one-time scrape only")
     parser.add_argument("--dashboard", action="store_true", help="Start dashboard only (no scraper)")
+    parser.add_argument("--reset", action="store_true", help="Clear all old data before scraping")
     args = parser.parse_args()
 
     # Initialize database
     os.makedirs(os.path.dirname(config.DB_PATH), exist_ok=True)
     init_db()
+
+    if args.reset:
+        reset_db()
+        logger.info("Database cleared. Run --scrape to fetch fresh posts.")
+        if not args.scrape and not args.dashboard:
+            return
 
     if args.scrape:
         run_scrape()
