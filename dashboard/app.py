@@ -35,6 +35,7 @@ def api_posts():
     limit = min(int(request.args.get("limit", 50)), 200)
     offset = int(request.args.get("offset", 0))
     bookmarked = request.args.get("bookmarked", "").lower() == "true"
+    hot_only = request.args.get("hot_only", "true").lower() != "false"
     search = request.args.get("search")
 
     posts = get_posts(
@@ -45,6 +46,7 @@ def api_posts():
         offset=offset,
         bookmarked_only=bookmarked,
         search=search,
+        hot_only=hot_only,
     )
     return jsonify(posts)
 

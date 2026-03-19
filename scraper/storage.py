@@ -29,7 +29,8 @@ CREATE TABLE IF NOT EXISTS posts (
     engagement_score INTEGER DEFAULT 0,
     images TEXT DEFAULT '[]',
     scraped_at TEXT NOT NULL,
-    bookmarked INTEGER DEFAULT 0
+    bookmarked INTEGER DEFAULT 0,
+    is_hot INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS scrape_state (
@@ -76,6 +77,8 @@ def init_db():
             conn.execute("ALTER TABLE posts ADD COLUMN tweet_id TEXT DEFAULT ''")
         if "reply_opportunity" not in cols:
             conn.execute("ALTER TABLE posts ADD COLUMN reply_opportunity INTEGER DEFAULT 0")
+        if "is_hot" not in cols:
+            conn.execute("ALTER TABLE posts ADD COLUMN is_hot INTEGER DEFAULT 0")
     logger.info("Database initialized at %s", config.DB_PATH)
 
 
@@ -132,8 +135,8 @@ def save_posts(posts: list[dict]) -> int:
                     INSERT INTO posts (tweet_id, url, username, display_name, content,
                                        topic, timestamp, likes, retweets, quotes,
                                        comments, impressions, reply_opportunity,
-                                       engagement_score, images, scraped_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                       engagement_score, images, scraped_at, is_hot)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(tweet_id) DO UPDATE SET
                         likes = excluded.likes,
                         retweets = excluded.retweets,
@@ -142,6 +145,7 @@ def save_posts(posts: list[dict]) -> int:
                         impressions = excluded.impressions,
                         reply_opportunity = excluded.reply_opportunity,
                         engagement_score = excluded.engagement_score,
+                        is_hot = excluded.is_hot,
                         scraped_at = excluded.scraped_at
                     """,
                     (
@@ -161,6 +165,7 @@ def save_posts(posts: list[dict]) -> int:
                         post["engagement_score"],
                         json.dumps(post.get("images", [])),
                         datetime.utcnow().isoformat(),
+                        1 if post.get("is_hot") else 0,
                     ),
                 )
                 inserted += 1
@@ -178,6 +183,7 @@ def get_posts(
     offset: int = 0,
     bookmarked_only: bool = False,
     search: str | None = None,
+    hot_only: bool = True,
 ) -> list[dict]:
     """Retrieve posts with filtering and sorting."""
     allowed_sort = {"engagement_score", "likes", "retweets", "comments", "impressions", "reply_opportunity", "timestamp", "scraped_at"}
@@ -188,6 +194,8 @@ def get_posts(
     conditions = []
     params = []
 
+    if hot_only:
+        conditions.append("is_hot = 1")
     if topic:
         conditions.append("topic = ?")
         params.append(topic)

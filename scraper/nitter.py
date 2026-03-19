@@ -237,13 +237,10 @@ def scrape_all_topics() -> list[dict]:
             replies = metrics.get("reply_count", 0)
             impressions = metrics.get("impression_count", 0)
 
-            # Skip posts that aren't hot enough
-            if likes < config.MIN_LIKES and retweets < config.MIN_RETWEETS:
-                continue
-
             content = tweet.get("text", "")
             topic = _classify_topic(content, topics_map)
             reply_opp = _calc_reply_opportunity(impressions, replies)
+            is_hot = likes >= config.MIN_LIKES or retweets >= config.MIN_RETWEETS
 
             all_posts.append({
                 "tweet_id": tweet_id,
@@ -261,6 +258,7 @@ def scrape_all_topics() -> list[dict]:
                 "images": [],
                 "topic": topic,
                 "engagement_score": likes + (retweets * 3) + (quotes * 2) + replies,
+                "is_hot": is_hot,
             })
 
         # Respect rate limits between batches

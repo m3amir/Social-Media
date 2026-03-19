@@ -2,6 +2,7 @@
 let currentTopic = "";
 let currentOffset = 0;
 let bookmarkedOnly = false;
+let hotOnly = true;
 let searchTimer = null;
 let currentReplyPost = null;
 const PAGE_SIZE = 30;
@@ -23,6 +24,13 @@ function toggleBookmarkFilter() {
     loadPosts();
 }
 
+function toggleAllTweets() {
+    hotOnly = !hotOnly;
+    document.getElementById("allTweetsFilter").classList.toggle("active", !hotOnly);
+    currentOffset = 0;
+    loadPosts();
+}
+
 function debounceSearch() {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
@@ -40,6 +48,7 @@ async function loadPosts(append = false) {
     });
     if (currentTopic) params.set("topic", currentTopic);
     if (bookmarkedOnly) params.set("bookmarked", "true");
+    if (!hotOnly) params.set("hot_only", "false");
     if (search) params.set("search", search);
 
     if (!append) {
