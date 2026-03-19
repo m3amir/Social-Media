@@ -11,9 +11,8 @@
     <!-- Sidebar -->
     <aside class="sidebar">
         <h1>X Scraper</h1>
-        <p class="subtitle">High-engagement post finder</p>
+        <p class="subtitle">Find hot posts. Craft replies.</p>
 
-        <!-- Stats -->
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="value">{{ stats.get('total', 0) }}</div>
@@ -41,7 +40,6 @@
             </div>
         </div>
 
-        <!-- Topic filters -->
         <div class="topic-filters">
             <h3>Topics</h3>
             <button class="topic-btn active" data-topic="" onclick="filterTopic(this, '')">
@@ -59,7 +57,6 @@
 
     <!-- Main content -->
     <main class="main">
-        <!-- Toolbar -->
         <div class="toolbar">
             <input type="text" class="search-box" id="searchBox"
                    placeholder="Search posts or usernames..." oninput="debounceSearch()">
@@ -74,11 +71,10 @@
                 <option value="timestamp">Post Date</option>
             </select>
             <button class="btn-bookmark-filter" id="bookmarkFilter" onclick="toggleBookmarkFilter()">
-                &#9733; Saved
+                Saved
             </button>
         </div>
 
-        <!-- Post list -->
         <div class="post-list" id="postList">
             <div class="loading">
                 <div class="spinner"></div>
@@ -87,9 +83,38 @@
         </div>
 
         <button class="load-more" id="loadMore" onclick="loadMore()" style="display:none">
-            Load more posts
+            Load more
         </button>
     </main>
+</div>
+
+<!-- Reply Composer Modal -->
+<div class="modal-overlay" id="replyModal">
+    <div class="modal">
+        <h2>Craft Reply</h2>
+        <div class="modal-tweet" id="modalTweet"></div>
+
+        <label for="insightInput">Your insight / angle</label>
+        <textarea id="insightInput" rows="3"
+                  placeholder="Paste your key insight, product context, or angle you want the reply to take..."></textarea>
+
+        <label for="toneSelect">Tone</label>
+        <select id="toneSelect" class="sort-select" style="width:100%;margin-bottom:16px">
+            <option value="insightful and conversational">Insightful & conversational</option>
+            <option value="bold and contrarian">Bold & contrarian</option>
+            <option value="helpful and actionable">Helpful & actionable</option>
+            <option value="witty and brief">Witty & brief</option>
+            <option value="technical and authoritative">Technical & authoritative</option>
+        </select>
+
+        <div class="generated-reply" id="generatedReply"></div>
+
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeReplyModal()">Cancel</button>
+            <button class="btn-copy" id="btnCopy" onclick="copyReply()">Copy reply</button>
+            <button class="btn-generate" id="btnGenerate" onclick="generateReply()">Generate reply</button>
+        </div>
+    </div>
 </div>
 
 <script src="{{ url_for('static', filename='js/app.js') }}"></script>
