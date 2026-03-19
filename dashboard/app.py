@@ -103,7 +103,10 @@ Write a reply tweet (max 280 chars) that:
 Return ONLY the reply text, nothing else."""
 
     try:
-        bedrock = boto3.client(
+        session = boto3.Session(
+            profile_name=os.getenv("AWS_PROFILE", "dev"),
+        )
+        bedrock = session.client(
             "bedrock-runtime",
             region_name=os.getenv("AWS_REGION", "us-east-1"),
         )
