@@ -83,8 +83,9 @@ TRACKED_TOPICS = [
 # ──────────────────────────────────────────────────────────────────────
 # ENGAGEMENT THRESHOLDS — only keep hot posts
 # ──────────────────────────────────────────────────────────────────────
-MIN_LIKES = 50
-MIN_RETWEETS = 10
+# For testing: set low. For production: 50 likes, 10 retweets
+MIN_LIKES = 3
+MIN_RETWEETS = 1
 
 # ──────────────────────────────────────────────────────────────────────
 # REPLY OPPORTUNITY SCORING
