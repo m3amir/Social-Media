@@ -274,4 +274,11 @@ def scrape_all_topics() -> list[dict]:
     )
 
     all_posts.sort(key=lambda p: p["engagement_score"], reverse=True)
+
+    # Cap total posts if MAX_POSTS_PER_SCRAPE is set
+    limit = config.MAX_POSTS_PER_SCRAPE
+    if limit and len(all_posts) > limit:
+        logger.info("Capping results to %d posts (MAX_POSTS_PER_SCRAPE)", limit)
+        all_posts = all_posts[:limit]
+
     return all_posts

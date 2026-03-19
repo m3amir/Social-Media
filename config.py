@@ -103,7 +103,12 @@ REPLY_OPPORTUNITY_ENABLED = True
 LOOKBACK_DAYS = 5
 
 # How many tweets to fetch per API call (max 100)
-TWEETS_PER_QUERY = 100
+# Set low (e.g. 10) to test without burning credits
+TWEETS_PER_QUERY = 10
+
+# Max total posts to keep per scrape cycle (None = unlimited)
+# Set to 5 for testing, None for production
+MAX_POSTS_PER_SCRAPE = 5
 
 # Scrape schedule — 3 times/day (morning, midday, evening)
 SCRAPE_HOURS = [8, 13, 19]  # 8 AM, 1 PM, 7 PM
