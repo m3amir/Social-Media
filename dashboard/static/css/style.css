@@ -281,6 +281,15 @@ body {
 .engagement-badge.mid { background: rgba(255,173,31,0.15); color: var(--engagement-mid); }
 .engagement-badge.low { background: rgba(136,153,166,0.15); color: var(--engagement-low); }
 
+.reply-opp-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    background: rgba(29,155,240,0.15);
+    color: var(--accent);
+}
+
 .post-footer {
     display: flex;
     justify-content: space-between;

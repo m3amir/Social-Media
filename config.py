@@ -8,46 +8,104 @@ load_dotenv()
 # X API v2 credentials — set in .env file or environment
 X_BEARER_TOKEN = os.getenv("X_BEARER_TOKEN", "")
 
-# Communities/topics to track — search queries for the X API
-# The X API recent search supports operators: #hashtag, keyword, from:user, etc.
-# COST OPTIMIZATION: We batch these into as few API calls as possible.
-# The X API query limit is 512 chars, so we split into 2 batched queries.
+# ──────────────────────────────────────────────────────────────────────
+# TOPIC STRATEGY
+# ──────────────────────────────────────────────────────────────────────
+# Optimized for someone promoting an AI/Agent product.
+# Goal: find viral posts where a smart reply gets maximum eyeballs.
+#
+# We use TWO types of search terms:
+#   - hashtags: #tag searches (community-based)
+#   - keywords: phrase searches (catches posts without hashtags)
+#
+# The X API query limit is 512 chars so these get batched automatically.
+# ──────────────────────────────────────────────────────────────────────
+
 TRACKED_TOPICS = [
+    # ── AI Agents (your core niche) ──────────────────────────────────
+    {
+        "name": "AI Agents",
+        "terms": [
+            "#AIagents", "#AgenticAI", "#AIagent",
+            '"AI agent"', '"AI agents"', '"agentic AI"',
+        ],
+    },
+    # ── LLMs & Foundation Models ─────────────────────────────────────
+    {
+        "name": "LLMs",
+        "terms": [
+            "#LLM", "#GPT", "#Claude", "#GenAI", "#GenerativeAI",
+            '"large language model"',
+        ],
+    },
+    # ── AI Tools & Automation ────────────────────────────────────────
+    {
+        "name": "AI Tools",
+        "terms": [
+            "#AItools", "#AIautomation", "#nocode",
+            '"AI tool"', '"AI workflow"', '"AI automation"',
+        ],
+    },
+    # ── AI Dev Frameworks (where builders hang out) ──────────────────
+    {
+        "name": "AI Dev",
+        "terms": [
+            "#langchain", "#crewai", "#autogen",
+            '"AI API"', '"AI SDK"', '"prompt engineering"',
+        ],
+    },
+    # ── Build in Public / Indie Hackers (launch exposure) ────────────
     {
         "name": "Build in Public",
-        "hashtags": ["#buildinpublic", "#BuildInPublic"],
+        "terms": [
+            "#buildinpublic", "#indiehackers", "#shipfast",
+            "#justlaunched", "#launched",
+        ],
     },
+    # ── SaaS & Startups ─────────────────────────────────────────────
     {
-        "name": "Indie Hackers",
-        "hashtags": ["#indiehackers", "#IndieHackers"],
+        "name": "SaaS & Startups",
+        "terms": [
+            "#saas", "#microsaas", "#startup",
+            "#founders", "#ProductHunt",
+        ],
     },
+    # ── Tech Twitter thought leaders (keyword, not hashtag) ──────────
     {
-        "name": "SaaS",
-        "hashtags": ["#saas", "#microsaas"],
-    },
-    {
-        "name": "Startups",
-        "hashtags": ["#startup", "#startups"],
-    },
-    {
-        "name": "AI",
-        "hashtags": ["#ai", "#llm", "#artificialintelligence"],
-    },
-    {
-        "name": "Dev Tools",
-        "hashtags": ["#devtools", "#developer", "#opensource"],
+        "name": "AI Thought Leaders",
+        "terms": [
+            '"the future of AI"', '"AI is"', '"just built"',
+            '"AI startup"', '"AI product"',
+        ],
     },
 ]
 
-# Engagement thresholds — posts below these are filtered out
-MIN_LIKES = 5
-MIN_RETWEETS = 2
+# ──────────────────────────────────────────────────────────────────────
+# ENGAGEMENT THRESHOLDS — only keep hot posts
+# ──────────────────────────────────────────────────────────────────────
+MIN_LIKES = 50
+MIN_RETWEETS = 10
+
+# ──────────────────────────────────────────────────────────────────────
+# REPLY OPPORTUNITY SCORING
+# ──────────────────────────────────────────────────────────────────────
+# Posts with high impressions but low reply counts = best reply spots.
+# A post with 50K impressions and 20 replies means your reply gets seen
+# by way more people vs one with 50K impressions and 500 replies.
+# The "reply opportunity score" is: impressions / (replies + 1)
+# Higher = better opportunity.
+REPLY_OPPORTUNITY_ENABLED = True
+
+# ──────────────────────────────────────────────────────────────────────
+# LOOKBACK & SCHEDULE
+# ──────────────────────────────────────────────────────────────────────
+# How many days back to search (max 7 on X API free/basic)
+LOOKBACK_DAYS = 5
 
 # How many tweets to fetch per API call (max 100)
 TWEETS_PER_QUERY = 100
 
 # Scrape schedule — 3 times/day (morning, midday, evening)
-# Uses ~6 API calls/day ≈ $1-3/month
 SCRAPE_HOURS = [8, 13, 19]  # 8 AM, 1 PM, 7 PM
 
 # Web dashboard settings

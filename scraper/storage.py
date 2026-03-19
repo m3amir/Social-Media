@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS posts (
     quotes INTEGER DEFAULT 0,
     comments INTEGER DEFAULT 0,
     impressions INTEGER DEFAULT 0,
+    reply_opportunity INTEGER DEFAULT 0,
     engagement_score INTEGER DEFAULT 0,
     images TEXT DEFAULT '[]',
     scraped_at TEXT NOT NULL,
@@ -73,6 +74,8 @@ def init_db():
             conn.execute("ALTER TABLE posts ADD COLUMN impressions INTEGER DEFAULT 0")
         if "tweet_id" not in cols:
             conn.execute("ALTER TABLE posts ADD COLUMN tweet_id TEXT DEFAULT ''")
+        if "reply_opportunity" not in cols:
+            conn.execute("ALTER TABLE posts ADD COLUMN reply_opportunity INTEGER DEFAULT 0")
     logger.info("Database initialized at %s", config.DB_PATH)
 
 
@@ -128,15 +131,16 @@ def save_posts(posts: list[dict]) -> int:
                     """
                     INSERT INTO posts (tweet_id, url, username, display_name, content,
                                        topic, timestamp, likes, retweets, quotes,
-                                       comments, impressions, engagement_score,
-                                       images, scraped_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                       comments, impressions, reply_opportunity,
+                                       engagement_score, images, scraped_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(tweet_id) DO UPDATE SET
                         likes = excluded.likes,
                         retweets = excluded.retweets,
                         quotes = excluded.quotes,
                         comments = excluded.comments,
                         impressions = excluded.impressions,
+                        reply_opportunity = excluded.reply_opportunity,
                         engagement_score = excluded.engagement_score,
                         scraped_at = excluded.scraped_at
                     """,
@@ -153,6 +157,7 @@ def save_posts(posts: list[dict]) -> int:
                         post["quotes"],
                         post["comments"],
                         post.get("impressions", 0),
+                        post.get("reply_opportunity", 0),
                         post["engagement_score"],
                         json.dumps(post.get("images", [])),
                         datetime.utcnow().isoformat(),
@@ -175,7 +180,7 @@ def get_posts(
     search: str | None = None,
 ) -> list[dict]:
     """Retrieve posts with filtering and sorting."""
-    allowed_sort = {"engagement_score", "likes", "retweets", "comments", "impressions", "timestamp", "scraped_at"}
+    allowed_sort = {"engagement_score", "likes", "retweets", "comments", "impressions", "reply_opportunity", "timestamp", "scraped_at"}
     if sort_by not in allowed_sort:
         sort_by = "engagement_score"
     order = "ASC" if order.lower() == "asc" else "DESC"

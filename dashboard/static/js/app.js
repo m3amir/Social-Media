@@ -110,6 +110,7 @@ function renderPost(post) {
             <span class="stat"><span class="icon">&#128172;</span> ${formatNum(post.comments)}</span>
             ${post.impressions ? `<span class="stat impressions"><span class="icon">&#128065;</span> ${formatNum(post.impressions)}</span>` : ''}
             <span class="engagement-badge ${engLevel}">${formatNum(post.engagement_score)} pts</span>
+            ${post.reply_opportunity > 100 ? `<span class="reply-opp-badge">${formatNum(post.reply_opportunity)} reply opp</span>` : ''}
         </div>
         <div class="post-footer">
             <span class="post-time">${timeStr}</span>
