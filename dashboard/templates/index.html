@@ -20,11 +20,11 @@
                 <div class="label">Posts</div>
             </div>
             <div class="stat-card">
-                <div class="value">{{ stats.get('max_engagement', 0)|int }}</div>
+                <div class="value">{{ (stats.get('max_engagement') or 0)|int }}</div>
                 <div class="label">Top Score</div>
             </div>
             <div class="stat-card">
-                <div class="value">{{ stats.get('avg_engagement', 0)|round(0)|int }}</div>
+                <div class="value">{{ (stats.get('avg_engagement') or 0)|round(0)|int }}</div>
                 <div class="label">Avg Score</div>
             </div>
             <div class="stat-card">
