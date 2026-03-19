@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X Engagement Scraper</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <h1>X Scraper</h1>
+        <p class="subtitle">High-engagement post finder</p>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="value">{{ stats.get('total', 0) }}</div>
+                <div class="label">Posts</div>
+            </div>
+            <div class="stat-card">
+                <div class="value">{{ stats.get('max_engagement', 0)|int }}</div>
+                <div class="label">Top Score</div>
+            </div>
+            <div class="stat-card">
+                <div class="value">{{ stats.get('avg_engagement', 0)|round(0)|int }}</div>
+                <div class="label">Avg Score</div>
+            </div>
+            <div class="stat-card">
+                <div class="value">{{ topics|length }}</div>
+                <div class="label">Topics</div>
+            </div>
+        </div>
+
+        <!-- Topic filters -->
+        <div class="topic-filters">
+            <h3>Topics</h3>
+            <button class="topic-btn active" data-topic="" onclick="filterTopic(this, '')">
+                All Posts
+                <span class="count">{{ stats.get('total', 0) }}</span>
+            </button>
+            {% for t in topics %}
+            <button class="topic-btn" data-topic="{{ t.topic }}" onclick="filterTopic(this, '{{ t.topic }}')">
+                {{ t.topic }}
+                <span class="count">{{ t.count }}</span>
+            </button>
+            {% endfor %}
+        </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main">
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <input type="text" class="search-box" id="searchBox"
+                   placeholder="Search posts or usernames..." oninput="debounceSearch()">
+            <select class="sort-select" id="sortSelect" onchange="loadPosts()">
+                <option value="engagement_score">Engagement Score</option>
+                <option value="likes">Most Likes</option>
+                <option value="retweets">Most Retweets</option>
+                <option value="comments">Most Comments</option>
+                <option value="scraped_at">Recently Scraped</option>
+                <option value="timestamp">Post Date</option>
+            </select>
+            <button class="btn-bookmark-filter" id="bookmarkFilter" onclick="toggleBookmarkFilter()">
+                &#9733; Saved
+            </button>
+        </div>
+
+        <!-- Post list -->
+        <div class="post-list" id="postList">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading posts...</p>
+            </div>
+        </div>
+
+        <button class="load-more" id="loadMore" onclick="loadMore()" style="display:none">
+            Load more posts
+        </button>
+    </main>
+</div>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
