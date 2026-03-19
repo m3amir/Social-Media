@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS posts (
     retweets INTEGER DEFAULT 0,
     quotes INTEGER DEFAULT 0,
     comments INTEGER DEFAULT 0,
+    impressions INTEGER DEFAULT 0,
     engagement_score INTEGER DEFAULT 0,
     images TEXT DEFAULT '[]',
     scraped_at TEXT NOT NULL,
@@ -50,9 +51,13 @@ def _get_db():
 
 
 def init_db():
-    """Initialize the database schema."""
+    """Initialize the database schema and run migrations."""
     with _get_db() as conn:
         conn.executescript(_SCHEMA)
+        # Migration: add impressions column if missing (upgrading from Nitter version)
+        cols = {row[1] for row in conn.execute("PRAGMA table_info(posts)").fetchall()}
+        if "impressions" not in cols:
+            conn.execute("ALTER TABLE posts ADD COLUMN impressions INTEGER DEFAULT 0")
     logger.info("Database initialized at %s", config.DB_PATH)
 
 
@@ -66,13 +71,14 @@ def save_posts(posts: list[dict]) -> int:
                     """
                     INSERT INTO posts (url, username, display_name, content, topic,
                                        timestamp, likes, retweets, quotes, comments,
-                                       engagement_score, images, scraped_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                       impressions, engagement_score, images, scraped_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(url) DO UPDATE SET
                         likes = excluded.likes,
                         retweets = excluded.retweets,
                         quotes = excluded.quotes,
                         comments = excluded.comments,
+                        impressions = excluded.impressions,
                         engagement_score = excluded.engagement_score,
                         scraped_at = excluded.scraped_at
                     """,
@@ -87,6 +93,7 @@ def save_posts(posts: list[dict]) -> int:
                         post["retweets"],
                         post["quotes"],
                         post["comments"],
+                        post.get("impressions", 0),
                         post["engagement_score"],
                         json.dumps(post.get("images", [])),
                         datetime.utcnow().isoformat(),
@@ -109,7 +116,7 @@ def get_posts(
     search: str | None = None,
 ) -> list[dict]:
     """Retrieve posts with filtering and sorting."""
-    allowed_sort = {"engagement_score", "likes", "retweets", "comments", "timestamp", "scraped_at"}
+    allowed_sort = {"engagement_score", "likes", "retweets", "comments", "impressions", "timestamp", "scraped_at"}
     if sort_by not in allowed_sort:
         sort_by = "engagement_score"
     order = "ASC" if order.lower() == "asc" else "DESC"

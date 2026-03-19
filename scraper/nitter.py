@@ -1,207 +1,143 @@
-"""Nitter-based scraper for X/Twitter posts."""
+"""X API v2 client for scraping high-engagement tweets."""
 
-import random
-import time
 import logging
-from datetime import datetime
-from urllib.parse import quote
+import time
+from datetime import datetime, timedelta, timezone
 
 import httpx
-from bs4 import BeautifulSoup
 
 import config
 
 logger = logging.getLogger(__name__)
 
+API_BASE = "https://api.x.com/2"
+
 
 def _get_client() -> httpx.Client:
-    """Create an HTTP client with browser-like headers."""
+    """Create an authenticated HTTP client for the X API."""
+    if not config.X_BEARER_TOKEN:
+        raise RuntimeError(
+            "X_BEARER_TOKEN not set. Create a free app at https://developer.x.com "
+            "and add your Bearer Token to .env"
+        )
     return httpx.Client(
-        timeout=15.0,
-        follow_redirects=True,
-        headers={
-            "User-Agent": (
-                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-                "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-            ),
-            "Accept": "text/html,application/xhtml+xml",
-            "Accept-Language": "en-US,en;q=0.9",
-        },
+        base_url=API_BASE,
+        timeout=30.0,
+        headers={"Authorization": f"Bearer {config.X_BEARER_TOKEN}"},
     )
 
 
-def _try_instances(path: str) -> httpx.Response | None:
-    """Try fetching a path across Nitter instances, rotating on failure."""
-    instances = list(config.NITTER_INSTANCES)
-    random.shuffle(instances)
+def search_recent_tweets(query: str, max_results: int = None) -> list[dict]:
+    """Search recent tweets using the X API v2 recent search endpoint.
 
-    for instance in instances:
-        url = f"{instance}{path}"
-        try:
-            with _get_client() as client:
-                resp = client.get(url)
-                if resp.status_code == 200:
-                    return resp
-                logger.warning("Instance %s returned %d", instance, resp.status_code)
-        except httpx.HTTPError as e:
-            logger.warning("Instance %s failed: %s", instance, e)
-        time.sleep(0.5)
+    Free tier: up to 1,500 tweets/month, 1 request/second, 7-day lookback.
+    """
+    if max_results is None:
+        max_results = config.TWEETS_PER_QUERY
 
-    logger.error("All Nitter instances failed for path: %s", path)
-    return None
+    # Clamp to API limits (10-100 per request)
+    max_results = max(10, min(max_results, 100))
 
+    params = {
+        "query": query,
+        "max_results": max_results,
+        "tweet.fields": "created_at,public_metrics,author_id,text",
+        "user.fields": "username,name,profile_image_url",
+        "expansions": "author_id",
+    }
 
-def _parse_stat(text: str) -> int:
-    """Parse engagement stat text like '1.2K' or '350' into an integer."""
-    if not text:
-        return 0
-    text = text.strip().replace(",", "")
-    multiplier = 1
-    if text.endswith("K"):
-        multiplier = 1_000
-        text = text[:-1]
-    elif text.endswith("M"):
-        multiplier = 1_000_000
-        text = text[:-1]
     try:
-        return int(float(text) * multiplier)
-    except ValueError:
-        return 0
+        with _get_client() as client:
+            resp = client.get("/tweets/search/recent", params=params)
 
+            if resp.status_code == 429:
+                reset = resp.headers.get("x-rate-limit-reset")
+                wait = 60
+                if reset:
+                    wait = max(1, int(reset) - int(time.time()))
+                logger.warning("Rate limited. Resets in %ds", wait)
+                return []
 
-def _parse_post(article, instance_url: str) -> dict | None:
-    """Parse a single post/tweet from a Nitter search result page."""
-    try:
-        # Username and display name
-        fullname_el = article.select_one(".fullname")
-        username_el = article.select_one(".username")
-        if not username_el:
-            return None
+            if resp.status_code == 403:
+                logger.error(
+                    "403 Forbidden — your API key may not have access to the "
+                    "recent search endpoint. Check your app permissions at "
+                    "https://developer.x.com"
+                )
+                return []
 
-        username = username_el.get_text(strip=True).lstrip("@")
-        display_name = fullname_el.get_text(strip=True) if fullname_el else username
+            if resp.status_code != 200:
+                logger.error("X API returned %d: %s", resp.status_code, resp.text[:300])
+                return []
 
-        # Tweet content
-        content_el = article.select_one(".tweet-content, .timeline-item .tweet-body .tweet-content")
-        content = content_el.get_text(strip=True) if content_el else ""
-        if not content:
-            return None
+            data = resp.json()
 
-        # Link to original tweet
-        link_el = article.select_one(".tweet-link, a.tweet-link")
-        tweet_path = link_el.get("href", "") if link_el else ""
-        tweet_url = f"https://x.com{tweet_path}" if tweet_path else ""
+    except httpx.HTTPError as e:
+        logger.error("X API request failed: %s", e)
+        return []
 
-        # Timestamp
-        time_el = article.select_one(".tweet-date a")
-        timestamp_str = time_el.get("title", "") if time_el else ""
-        try:
-            timestamp = datetime.strptime(timestamp_str, "%b %d, %Y · %I:%M %p %Z")
-        except (ValueError, TypeError):
-            timestamp = datetime.utcnow()
+    tweets = data.get("data", [])
+    if not tweets:
+        return []
 
-        # Engagement stats — each .tweet-stat span contains an icon + number text
-        stat_els = article.select(".tweet-stat")
-        stats = []
-        for stat_el in stat_els:
-            # Get only the text content, stripping the icon element
-            for icon in stat_el.select(".icon-container"):
-                icon.decompose()
-            stats.append(_parse_stat(stat_el.get_text()))
+    # Build user lookup from includes
+    users = {}
+    for user in data.get("includes", {}).get("users", []):
+        users[user["id"]] = user
 
-        # Nitter stats order: comments, retweets, quotes, likes
-        comments = stats[0] if len(stats) > 0 else 0
-        retweets = stats[1] if len(stats) > 1 else 0
-        quotes = stats[2] if len(stats) > 2 else 0
-        likes = stats[3] if len(stats) > 3 else 0
+    posts = []
+    for tweet in tweets:
+        metrics = tweet.get("public_metrics", {})
+        author = users.get(tweet.get("author_id"), {})
+        username = author.get("username", "unknown")
 
-        # Images
-        images = []
-        for img in article.select(".attachment.image img, .still-image img"):
-            src = img.get("src", "")
-            if src:
-                if src.startswith("/"):
-                    src = f"{instance_url}{src}"
-                images.append(src)
+        likes = metrics.get("like_count", 0)
+        retweets = metrics.get("retweet_count", 0)
+        quotes = metrics.get("quote_count", 0)
+        replies = metrics.get("reply_count", 0)
+        impressions = metrics.get("impression_count", 0)
 
-        return {
+        posts.append({
             "username": username,
-            "display_name": display_name,
-            "content": content,
-            "url": tweet_url,
-            "timestamp": timestamp.isoformat(),
+            "display_name": author.get("name", username),
+            "content": tweet.get("text", ""),
+            "url": f"https://x.com/{username}/status/{tweet['id']}",
+            "timestamp": tweet.get("created_at", datetime.now(timezone.utc).isoformat()),
             "likes": likes,
             "retweets": retweets,
             "quotes": quotes,
-            "comments": comments,
-            "images": images,
-            "engagement_score": likes + (retweets * 3) + (quotes * 2) + comments,
-        }
-    except Exception as e:
-        logger.debug("Failed to parse post: %s", e)
-        return None
-
-
-def search_posts(query: str, limit: int = None) -> list[dict]:
-    """Search for posts matching a query via Nitter."""
-    if limit is None:
-        limit = config.POSTS_PER_QUERY
-
-    encoded_query = quote(query)
-    path = f"/search?f=tweets&q={encoded_query}"
-    resp = _try_instances(path)
-    if not resp:
-        return []
-
-    # Determine which instance responded
-    instance_url = str(resp.url).split("/search")[0]
-
-    soup = BeautifulSoup(resp.text, "lxml")
-    articles = soup.select(".timeline-item")
-
-    # Fallback: try alternate selectors if primary finds nothing
-    if not articles:
-        articles = soup.select(".tweet-item, .timeline .tweet")
-
-    if not articles:
-        logger.warning("No tweet elements found in response — page structure may have changed")
-        logger.debug("Response snippet: %.500s", resp.text[:500])
-
-    posts = []
-    for article in articles[:limit]:
-        post = _parse_post(article, instance_url)
-        if post:
-            posts.append(post)
+            "comments": replies,
+            "impressions": impressions,
+            "images": [],
+            "engagement_score": likes + (retweets * 3) + (quotes * 2) + replies,
+        })
 
     return posts
 
 
 def scrape_all_topics() -> list[dict]:
-    """Scrape posts for all configured topics and return high-engagement ones."""
+    """Fetch tweets for all configured topics and return high-engagement ones."""
     all_posts = []
     seen_urls = set()
 
     for topic in config.TRACKED_TOPICS:
         topic_name = topic["name"]
-        logger.info("Scraping topic: %s", topic_name)
+        query = topic["query"]
+        logger.info("Fetching topic: %s", topic_name)
 
-        for query in topic["queries"]:
-            posts = search_posts(query)
-            for post in posts:
-                # Deduplicate by URL
-                if post["url"] in seen_urls:
-                    continue
-                seen_urls.add(post["url"])
+        posts = search_recent_tweets(query)
+        for post in posts:
+            if post["url"] in seen_urls:
+                continue
+            seen_urls.add(post["url"])
 
-                # Apply engagement thresholds
-                if post["likes"] >= config.MIN_LIKES or post["retweets"] >= config.MIN_RETWEETS:
-                    post["topic"] = topic_name
-                    all_posts.append(post)
+            if post["likes"] >= config.MIN_LIKES or post["retweets"] >= config.MIN_RETWEETS:
+                post["topic"] = topic_name
+                all_posts.append(post)
 
-            # Be polite — small delay between queries
-            time.sleep(random.uniform(1.0, 2.5))
+        # Respect rate limits — 1 request/sec on free tier
+        time.sleep(1.5)
 
-    # Sort by engagement score descending
     all_posts.sort(key=lambda p: p["engagement_score"], reverse=True)
     logger.info("Found %d high-engagement posts across all topics", len(all_posts))
     return all_posts

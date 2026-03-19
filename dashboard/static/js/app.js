@@ -108,6 +108,7 @@ function renderPost(post) {
             <span class="stat retweets"><span class="icon">&#8635;</span> ${formatNum(post.retweets)}</span>
             <span class="stat quotes"><span class="icon">&#10078;</span> ${formatNum(post.quotes)}</span>
             <span class="stat"><span class="icon">&#128172;</span> ${formatNum(post.comments)}</span>
+            ${post.impressions ? `<span class="stat impressions"><span class="icon">&#128065;</span> ${formatNum(post.impressions)}</span>` : ''}
             <span class="engagement-badge ${engLevel}">${formatNum(post.engagement_score)} pts</span>
         </div>
         <div class="post-footer">
