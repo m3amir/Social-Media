@@ -10,30 +10,32 @@ X_BEARER_TOKEN = os.getenv("X_BEARER_TOKEN", "")
 
 # Communities/topics to track — search queries for the X API
 # The X API recent search supports operators: #hashtag, keyword, from:user, etc.
+# COST OPTIMIZATION: We batch these into as few API calls as possible.
+# The X API query limit is 512 chars, so we split into 2 batched queries.
 TRACKED_TOPICS = [
     {
         "name": "Build in Public",
-        "query": "(#buildinpublic OR #BuildInPublic) -is:retweet lang:en",
+        "hashtags": ["#buildinpublic", "#BuildInPublic"],
     },
     {
         "name": "Indie Hackers",
-        "query": "(#indiehackers OR #IndieHackers) -is:retweet lang:en",
+        "hashtags": ["#indiehackers", "#IndieHackers"],
     },
     {
         "name": "SaaS",
-        "query": "(#saas OR #microsaas) -is:retweet lang:en",
+        "hashtags": ["#saas", "#microsaas"],
     },
     {
         "name": "Startups",
-        "query": "(#startup OR #startups) -is:retweet lang:en",
+        "hashtags": ["#startup", "#startups"],
     },
     {
         "name": "AI",
-        "query": "(#ai OR #llm OR #artificialintelligence) -is:retweet lang:en",
+        "hashtags": ["#ai", "#llm", "#artificialintelligence"],
     },
     {
         "name": "Dev Tools",
-        "query": "(#devtools OR #developer OR #opensource) -is:retweet lang:en",
+        "hashtags": ["#devtools", "#developer", "#opensource"],
     },
 ]
 
@@ -41,11 +43,12 @@ TRACKED_TOPICS = [
 MIN_LIKES = 5
 MIN_RETWEETS = 2
 
-# How many tweets to fetch per query (max 100 per request on free tier)
-TWEETS_PER_QUERY = 50
+# How many tweets to fetch per API call (max 100)
+TWEETS_PER_QUERY = 100
 
-# Scrape interval in minutes
-SCRAPE_INTERVAL_MINUTES = 30
+# Scrape schedule — 3 times/day (morning, midday, evening)
+# Uses ~6 API calls/day ≈ $1-3/month
+SCRAPE_HOURS = [8, 13, 19]  # 8 AM, 1 PM, 7 PM
 
 # Web dashboard settings
 DASHBOARD_HOST = "127.0.0.1"

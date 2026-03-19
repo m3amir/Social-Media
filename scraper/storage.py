@@ -13,7 +13,8 @@ logger = logging.getLogger(__name__)
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS posts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    url TEXT UNIQUE NOT NULL,
+    tweet_id TEXT UNIQUE NOT NULL,
+    url TEXT NOT NULL,
     username TEXT NOT NULL,
     display_name TEXT,
     content TEXT NOT NULL,
@@ -28,6 +29,18 @@ CREATE TABLE IF NOT EXISTS posts (
     images TEXT DEFAULT '[]',
     scraped_at TEXT NOT NULL,
     bookmarked INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS scrape_state (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS credit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp TEXT NOT NULL,
+    api_calls INTEGER DEFAULT 0,
+    tweets_read INTEGER DEFAULT 0
 );
 
 CREATE INDEX IF NOT EXISTS idx_posts_engagement ON posts(engagement_score DESC);
@@ -54,11 +67,55 @@ def init_db():
     """Initialize the database schema and run migrations."""
     with _get_db() as conn:
         conn.executescript(_SCHEMA)
-        # Migration: add impressions column if missing (upgrading from Nitter version)
+        # Migration: add columns if missing (upgrading from older versions)
         cols = {row[1] for row in conn.execute("PRAGMA table_info(posts)").fetchall()}
         if "impressions" not in cols:
             conn.execute("ALTER TABLE posts ADD COLUMN impressions INTEGER DEFAULT 0")
+        if "tweet_id" not in cols:
+            conn.execute("ALTER TABLE posts ADD COLUMN tweet_id TEXT DEFAULT ''")
     logger.info("Database initialized at %s", config.DB_PATH)
+
+
+def get_since_id(batch_name: str) -> str | None:
+    """Get the newest tweet ID we've seen for a batch, for incremental fetching."""
+    with _get_db() as conn:
+        row = conn.execute(
+            "SELECT value FROM scrape_state WHERE key = ?",
+            (f"since_id:{batch_name}",),
+        ).fetchone()
+        return row["value"] if row else None
+
+
+def set_since_id(batch_name: str, tweet_id: str):
+    """Store the newest tweet ID for a batch."""
+    with _get_db() as conn:
+        conn.execute(
+            "INSERT INTO scrape_state (key, value) VALUES (?, ?) "
+            "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            (f"since_id:{batch_name}", tweet_id),
+        )
+
+
+def log_credit_usage(api_calls: int, tweets_read: int):
+    """Log API credit usage for tracking spend."""
+    with _get_db() as conn:
+        conn.execute(
+            "INSERT INTO credit_log (timestamp, api_calls, tweets_read) VALUES (?, ?, ?)",
+            (datetime.utcnow().isoformat(), api_calls, tweets_read),
+        )
+
+
+def get_credit_usage() -> dict:
+    """Get credit usage summary."""
+    with _get_db() as conn:
+        row = conn.execute(
+            "SELECT COALESCE(SUM(api_calls), 0) as total_calls, "
+            "COALESCE(SUM(tweets_read), 0) as total_tweets, "
+            "MIN(timestamp) as first_call, "
+            "MAX(timestamp) as last_call "
+            "FROM credit_log"
+        ).fetchone()
+        return dict(row) if row else {}
 
 
 def save_posts(posts: list[dict]) -> int:
@@ -69,11 +126,12 @@ def save_posts(posts: list[dict]) -> int:
             try:
                 conn.execute(
                     """
-                    INSERT INTO posts (url, username, display_name, content, topic,
-                                       timestamp, likes, retweets, quotes, comments,
-                                       impressions, engagement_score, images, scraped_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ON CONFLICT(url) DO UPDATE SET
+                    INSERT INTO posts (tweet_id, url, username, display_name, content,
+                                       topic, timestamp, likes, retweets, quotes,
+                                       comments, impressions, engagement_score,
+                                       images, scraped_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(tweet_id) DO UPDATE SET
                         likes = excluded.likes,
                         retweets = excluded.retweets,
                         quotes = excluded.quotes,
@@ -83,6 +141,7 @@ def save_posts(posts: list[dict]) -> int:
                         scraped_at = excluded.scraped_at
                     """,
                     (
+                        post.get("tweet_id", ""),
                         post["url"],
                         post["username"],
                         post["display_name"],
@@ -164,7 +223,13 @@ def get_stats() -> dict:
             "MAX(scraped_at) as last_scraped "
             "FROM posts"
         ).fetchone()
-        return dict(row) if row else {}
+        stats = dict(row) if row else {}
+
+        # Add credit usage
+        credits = get_credit_usage()
+        stats["api_calls"] = credits.get("total_calls", 0)
+        stats["tweets_read"] = credits.get("total_tweets", 0)
+        return stats
 
 
 def toggle_bookmark(post_id: int) -> bool:

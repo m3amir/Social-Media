@@ -31,6 +31,14 @@
                 <div class="value">{{ topics|length }}</div>
                 <div class="label">Topics</div>
             </div>
+            <div class="stat-card">
+                <div class="value">{{ stats.get('api_calls', 0) }}</div>
+                <div class="label">API Calls</div>
+            </div>
+            <div class="stat-card">
+                <div class="value">{{ stats.get('tweets_read', 0) }}</div>
+                <div class="label">Tweets Read</div>
+            </div>
         </div>
 
         <!-- Topic filters -->

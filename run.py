@@ -37,7 +37,7 @@ def run_scrape():
         count = save_posts(posts)
         logger.info("Scrape complete: %d posts saved/updated", count)
     else:
-        logger.warning("Scrape returned no posts — Nitter instances may be down")
+        logger.warning("Scrape returned no posts — credits may be depleted or no new tweets")
     return posts
 
 
@@ -49,19 +49,23 @@ def run_dashboard(with_scheduler: bool = True):
         from apscheduler.schedulers.background import BackgroundScheduler
 
         scheduler = BackgroundScheduler()
-        scheduler.add_job(
-            run_scrape,
-            "interval",
-            minutes=config.SCRAPE_INTERVAL_MINUTES,
-            id="scrape_job",
-            max_instances=1,
-        )
-        scheduler.start()
-        logger.info(
-            "Background scraper scheduled every %d minutes", config.SCRAPE_INTERVAL_MINUTES
-        )
 
-        # Run initial scrape
+        # Schedule scrapes at specific hours (morning, midday, evening)
+        for hour in config.SCRAPE_HOURS:
+            scheduler.add_job(
+                run_scrape,
+                "cron",
+                hour=hour,
+                minute=0,
+                id=f"scrape_{hour}",
+                max_instances=1,
+            )
+
+        scheduler.start()
+        schedule_str = ", ".join(f"{h}:00" for h in config.SCRAPE_HOURS)
+        logger.info("Scraper scheduled at: %s", schedule_str)
+
+        # Run initial scrape on startup
         run_scrape()
 
     logger.info("Starting dashboard at http://%s:%d", config.DASHBOARD_HOST, config.DASHBOARD_PORT)
