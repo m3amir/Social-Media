@@ -24,8 +24,33 @@ X_BEARER_TOKEN = os.getenv("X_BEARER_TOKEN", "")
 # ──────────────────────────────────────────────────────────────────────
 
 TRACKED_TOPICS = [
+    # ── AI Agents — opinions & questions in your core niche ──────────
+    {
+        "name": "AI Agents",
+        "terms": [
+            "#AIagents", "#AgenticAI",
+            '"AI agent"', '"agentic AI"', '"multi-agent"',
+            '"agent framework"',
+        ],
+    },
+    # ── LLMs & Models — debates, not announcements ───────────────────
+    {
+        "name": "LLMs",
+        "terms": [
+            "#LLM", "#GenAI", "#GenerativeAI",
+            '"LLM hallucination"', '"fine-tuning" vs',
+            '"RAG"', '"prompt engineering is"',
+        ],
+    },
+    # ── AI Dev Frameworks — where builders debate tools ──────────────
+    {
+        "name": "AI Dev",
+        "terms": [
+            "#langchain", "#crewai", "#autogen",
+            '"AI SDK"', '"vector database" vs',
+        ],
+    },
     # ── AI Hot Takes & Debates ───────────────────────────────────────
-    # People sharing opinions you can agree/disagree with
     {
         "name": "AI Debates",
         "terms": [
@@ -35,63 +60,47 @@ TRACKED_TOPICS = [
         ],
     },
     # ── AI Questions & Help ──────────────────────────────────────────
-    # People asking for advice — perfect for showcasing expertise
     {
         "name": "AI Questions",
         "terms": [
-            '"should I use" AI', '"how do you" AI agent',
-            '"what\'s the best" AI', '"anyone tried" AI',
-            '"struggling with" AI', '"how are you using" AI',
+            '"should I use" AI', '"what\'s the best" AI',
+            '"anyone tried" AI', '"how are you using" AI',
+            '"struggling with" AI',
         ],
     },
     # ── AI Strategy & Predictions ────────────────────────────────────
-    # Big-picture discussions where thought leaders weigh in
     {
         "name": "AI Strategy",
         "terms": [
-            '"the problem with" AI', '"AI is not"',
-            '"AI hype"', '"AI bubble"',
-            '"the future of" AI agents', '"AI in 2026"',
+            '"the problem with" AI', '"AI hype"',
+            '"AI bubble"', '"the future of" AI',
+            '"AI in 2026"', '"AI is not"',
         ],
     },
-    # ── Agent Architecture Discussions ───────────────────────────────
-    # Technical debates about building agents — your core niche
+    # ── Build in Public — find discussions, not just launches ────────
     {
-        "name": "Agent Architecture",
+        "name": "Build in Public",
         "terms": [
-            '"agent framework"', '"multi-agent"',
-            '"AI agent" wrong', '"AI agent" better',
-            '"agentic" overrated', '"crew ai" OR "crewai" vs',
+            "#buildinpublic", "#indiehackers",
+            "#shipfast",
         ],
     },
-    # ── AI Ethics & Impact ───────────────────────────────────────────
-    # Controversial topics that drive engagement
+    # ── SaaS & Startups — strategy discussions ───────────────────────
+    {
+        "name": "SaaS & Startups",
+        "terms": [
+            "#saas", "#microsaas", "#startup", "#founders",
+            '"AI wrapper"', '"moat" AI',
+            '"build vs buy" AI', '"open source vs" AI',
+        ],
+    },
+    # ── AI Impact & Ethics — high-engagement controversial topics ────
     {
         "name": "AI Impact",
         "terms": [
             '"AI ethics"', '"AI regulation"',
             '"AI jobs"', '"AI risk"',
-            '"responsible AI"', '"AI safety"',
-        ],
-    },
-    # ── Builder Pain Points ──────────────────────────────────────────
-    # Frustrated builders you can help
-    {
-        "name": "Builder Pain Points",
-        "terms": [
-            '"AI is broken"', '"LLM hallucination"',
-            '"prompt engineering is"', '"RAG" wrong',
-            '"fine-tuning" vs', '"vector database" vs',
-        ],
-    },
-    # ── Startup & Product Strategy ───────────────────────────────────
-    # Founders debating strategy — shows you think beyond code
-    {
-        "name": "Startup Strategy",
-        "terms": [
-            '"AI wrapper"', '"moat" AI',
-            '"build vs buy" AI', '"AI startup" mistake',
-            '"pricing" AI', '"open source vs" AI',
+            '"AI safety"',
         ],
     },
 ]
