@@ -99,6 +99,12 @@ def _classify_topic(text: str, topics_map: dict) -> str:
     return "General"
 
 
+def _is_self_promo(text: str) -> bool:
+    """Check if a tweet is self-promotional or a launch announcement."""
+    text_lower = text.lower()
+    return any(kw in text_lower for kw in config.SELF_PROMO_KEYWORDS)
+
+
 def _calc_reply_opportunity(impressions: int, replies: int) -> int:
     """Calculate reply opportunity score.
 
@@ -242,6 +248,16 @@ def scrape_all_topics() -> list[dict]:
             reply_opp = _calc_reply_opportunity(impressions, replies)
             is_hot = likes >= config.MIN_LIKES or retweets >= config.MIN_RETWEETS
 
+            raw_score = likes + (retweets * 3) + (quotes * 2) + replies
+
+            # Deprioritize self-promo / announcement tweets
+            if _is_self_promo(content):
+                raw_score = int(raw_score * config.SELF_PROMO_PENALTY)
+
+            # Boost tweets that ask questions (high engagement potential)
+            if "?" in content:
+                raw_score = int(raw_score * 1.5)
+
             all_posts.append({
                 "tweet_id": tweet_id,
                 "username": username,
@@ -257,7 +273,7 @@ def scrape_all_topics() -> list[dict]:
                 "reply_opportunity": reply_opp,
                 "images": [],
                 "topic": topic,
-                "engagement_score": likes + (retweets * 3) + (quotes * 2) + replies,
+                "engagement_score": raw_score,
                 "is_hot": is_hot,
             })
 

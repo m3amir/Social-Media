@@ -11,8 +11,10 @@ X_BEARER_TOKEN = os.getenv("X_BEARER_TOKEN", "")
 # ──────────────────────────────────────────────────────────────────────
 # TOPIC STRATEGY
 # ──────────────────────────────────────────────────────────────────────
-# Optimized for someone promoting an AI/Agent product.
-# Goal: find viral posts where a smart reply gets maximum eyeballs.
+# Optimized for THOUGHT LEADERSHIP — finding debates, opinions, hot
+# takes, and open questions where a smart reply builds your reputation.
+#
+# NOT for: project announcements, "just shipped" posts, self-promo.
 #
 # We use TWO types of search terms:
 #   - hashtags: #tag searches (community-based)
@@ -22,63 +24,90 @@ X_BEARER_TOKEN = os.getenv("X_BEARER_TOKEN", "")
 # ──────────────────────────────────────────────────────────────────────
 
 TRACKED_TOPICS = [
-    # ── AI Agents (your core niche) ──────────────────────────────────
+    # ── AI Hot Takes & Debates ───────────────────────────────────────
+    # People sharing opinions you can agree/disagree with
     {
-        "name": "AI Agents",
+        "name": "AI Debates",
         "terms": [
-            "#AIagents", "#AgenticAI", "#AIagent",
-            '"AI agent"', '"AI agents"', '"agentic AI"',
+            '"AI will replace"', '"AI won\'t replace"',
+            '"unpopular opinion" AI', '"hot take" AI',
+            '"overrated" AI', '"underrated" AI',
         ],
     },
-    # ── LLMs & Foundation Models ─────────────────────────────────────
+    # ── AI Questions & Help ──────────────────────────────────────────
+    # People asking for advice — perfect for showcasing expertise
     {
-        "name": "LLMs",
+        "name": "AI Questions",
         "terms": [
-            "#LLM", "#GPT", "#Claude", "#GenAI", "#GenerativeAI",
-            '"large language model"',
+            '"should I use" AI', '"how do you" AI agent',
+            '"what\'s the best" AI', '"anyone tried" AI',
+            '"struggling with" AI', '"how are you using" AI',
         ],
     },
-    # ── AI Tools & Automation ────────────────────────────────────────
+    # ── AI Strategy & Predictions ────────────────────────────────────
+    # Big-picture discussions where thought leaders weigh in
     {
-        "name": "AI Tools",
+        "name": "AI Strategy",
         "terms": [
-            "#AItools", "#AIautomation", "#nocode",
-            '"AI tool"', '"AI workflow"', '"AI automation"',
+            '"the problem with" AI', '"AI is not"',
+            '"AI hype"', '"AI bubble"',
+            '"the future of" AI agents', '"AI in 2026"',
         ],
     },
-    # ── AI Dev Frameworks (where builders hang out) ──────────────────
+    # ── Agent Architecture Discussions ───────────────────────────────
+    # Technical debates about building agents — your core niche
     {
-        "name": "AI Dev",
+        "name": "Agent Architecture",
         "terms": [
-            "#langchain", "#crewai", "#autogen",
-            '"AI API"', '"AI SDK"', '"prompt engineering"',
+            '"agent framework"', '"multi-agent"',
+            '"AI agent" wrong', '"AI agent" better',
+            '"agentic" overrated', '"crew ai" OR "crewai" vs',
         ],
     },
-    # ── Build in Public / Indie Hackers (launch exposure) ────────────
+    # ── AI Ethics & Impact ───────────────────────────────────────────
+    # Controversial topics that drive engagement
     {
-        "name": "Build in Public",
+        "name": "AI Impact",
         "terms": [
-            "#buildinpublic", "#indiehackers", "#shipfast",
-            "#justlaunched", "#launched",
+            '"AI ethics"', '"AI regulation"',
+            '"AI jobs"', '"AI risk"',
+            '"responsible AI"', '"AI safety"',
         ],
     },
-    # ── SaaS & Startups ─────────────────────────────────────────────
+    # ── Builder Pain Points ──────────────────────────────────────────
+    # Frustrated builders you can help
     {
-        "name": "SaaS & Startups",
+        "name": "Builder Pain Points",
         "terms": [
-            "#saas", "#microsaas", "#startup",
-            "#founders", "#ProductHunt",
+            '"AI is broken"', '"LLM hallucination"',
+            '"prompt engineering is"', '"RAG" wrong',
+            '"fine-tuning" vs', '"vector database" vs',
         ],
     },
-    # ── Tech Twitter thought leaders (keyword, not hashtag) ──────────
+    # ── Startup & Product Strategy ───────────────────────────────────
+    # Founders debating strategy — shows you think beyond code
     {
-        "name": "AI Thought Leaders",
+        "name": "Startup Strategy",
         "terms": [
-            '"the future of AI"', '"AI is"', '"just built"',
-            '"AI startup"', '"AI product"',
+            '"AI wrapper"', '"moat" AI',
+            '"build vs buy" AI', '"AI startup" mistake',
+            '"pricing" AI', '"open source vs" AI',
         ],
     },
 ]
+
+# ──────────────────────────────────────────────────────────────────────
+# CONTENT FILTERS — skip self-promo & announcements, keep discussions
+# ──────────────────────────────────────────────────────────────────────
+# Tweets matching these patterns get deprioritized (scored lower).
+# They're not removed entirely in case they spark good discussions.
+SELF_PROMO_KEYWORDS = [
+    "just launched", "just shipped", "check out my", "i built",
+    "we just released", "now available", "sign up", "join our waitlist",
+    "use code", "discount", "giveaway", "drop a follow",
+    "link in bio", "subscribe to", "download now",
+]
+SELF_PROMO_PENALTY = 0.3  # multiply engagement score by this
 
 # ──────────────────────────────────────────────────────────────────────
 # ENGAGEMENT THRESHOLDS — only keep hot posts
