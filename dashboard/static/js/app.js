@@ -5,6 +5,7 @@ let bookmarkedOnly = false;
 let hotOnly = true;
 let searchTimer = null;
 let currentReplyPost = null;
+const postCache = {};
 const PAGE_SIZE = 30;
 
 document.addEventListener("DOMContentLoaded", () => loadPosts());
@@ -92,7 +93,7 @@ function renderPost(post) {
                      post.engagement_score >= 100 ? "mid" : "low";
     const bookmarkClass = post.bookmarked ? "bookmarked" : "";
     const timeStr = formatTime(post.timestamp);
-    const postData = encodeURIComponent(JSON.stringify(post));
+    postCache[post.id] = post;
 
     return `
     <div class="post-card" id="post-${post.id}">
@@ -119,7 +120,7 @@ function renderPost(post) {
         <div class="post-footer">
             <span class="post-time">${timeStr}</span>
             <div class="post-actions">
-                <button class="btn-action" onclick='openReplyModal(${postData})'>Craft reply</button>
+                <button class="btn-action" onclick="openReplyModal(${post.id})">Craft reply</button>
                 <button class="btn-action ${bookmarkClass}" onclick="toggleBookmark(${post.id}, this)">Save</button>
                 <a class="btn-action" href="${esc(post.url)}" target="_blank" rel="noopener">View</a>
             </div>
@@ -129,8 +130,9 @@ function renderPost(post) {
 
 // ── Reply Composer ──────────────────────────────────────────────
 
-function openReplyModal(post) {
-    if (typeof post === 'string') post = JSON.parse(decodeURIComponent(post));
+function openReplyModal(postId) {
+    const post = postCache[postId];
+    if (!post) return;
     currentReplyPost = post;
 
     document.getElementById("modalTweet").innerHTML =
