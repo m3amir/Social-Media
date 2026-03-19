@@ -100,9 +100,14 @@ def _parse_post(article, instance_url: str) -> dict | None:
         except (ValueError, TypeError):
             timestamp = datetime.utcnow()
 
-        # Engagement stats
-        stat_els = article.select(".tweet-stat .tweet-stat-text, .icon-container span")
-        stats = [_parse_stat(el.get_text()) for el in stat_els]
+        # Engagement stats — each .tweet-stat span contains an icon + number text
+        stat_els = article.select(".tweet-stat")
+        stats = []
+        for stat_el in stat_els:
+            # Get only the text content, stripping the icon element
+            for icon in stat_el.select(".icon-container"):
+                icon.decompose()
+            stats.append(_parse_stat(stat_el.get_text()))
 
         # Nitter stats order: comments, retweets, quotes, likes
         comments = stats[0] if len(stats) > 0 else 0
@@ -152,7 +157,15 @@ def search_posts(query: str, limit: int = None) -> list[dict]:
     instance_url = str(resp.url).split("/search")[0]
 
     soup = BeautifulSoup(resp.text, "lxml")
-    articles = soup.select(".timeline-item, .tweet-item")
+    articles = soup.select(".timeline-item")
+
+    # Fallback: try alternate selectors if primary finds nothing
+    if not articles:
+        articles = soup.select(".tweet-item, .timeline .tweet")
+
+    if not articles:
+        logger.warning("No tweet elements found in response — page structure may have changed")
+        logger.debug("Response snippet: %.500s", resp.text[:500])
 
     posts = []
     for article in articles[:limit]:

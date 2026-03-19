@@ -2,10 +2,9 @@
 
 # Nitter instances to try (rotated on failure)
 NITTER_INSTANCES = [
-    "https://nitter.privacydev.net",
+    "https://xcancel.com",
     "https://nitter.poast.org",
-    "https://nitter.woodland.cafe",
-    "https://nitter.1d4.us",
+    "https://nitter.privacydev.net",
 ]
 
 # Communities/topics to track — hashtags and search keywords
@@ -29,7 +28,7 @@ POSTS_PER_QUERY = 30
 SCRAPE_INTERVAL_MINUTES = 30
 
 # Web dashboard settings
-DASHBOARD_HOST = "0.0.0.0"
+DASHBOARD_HOST = "127.0.0.1"
 DASHBOARD_PORT = 5000
 
 # SQLite database path
