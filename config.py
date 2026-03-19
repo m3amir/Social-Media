@@ -11,110 +11,102 @@ X_BEARER_TOKEN = os.getenv("X_BEARER_TOKEN", "")
 # ──────────────────────────────────────────────────────────────────────
 # TOPIC STRATEGY
 # ──────────────────────────────────────────────────────────────────────
-# Optimized for THOUGHT LEADERSHIP — finding debates, opinions, hot
-# takes, and open questions where a smart reply builds your reputation.
+# Optimized for ORGANIC FOUNDER POSTS — the kind that show up on your
+# For You page with no hashtags, just real people sharing milestones,
+# asking questions, and building in public.
 #
-# NOT for: project announcements, "just shipped" posts, self-promo.
+# These posts get natural engagement (likes, replies, quotes) because
+# they're authentic — not because they're gaming hashtags.
 #
-# We use TWO types of search terms:
-#   - hashtags: #tag searches (community-based)
-#   - keywords: phrase searches (catches posts without hashtags)
-#
+# Strategy: search for PHRASES founders actually say, not hashtags.
 # The X API query limit is 512 chars so these get batched automatically.
 # ──────────────────────────────────────────────────────────────────────
 
 TRACKED_TOPICS = [
-    # ── AI Agents — opinions & questions in your core niche ──────────
+    # ── Revenue Milestones — "$3K MRR", "crossed $10K", etc. ────────
     {
-        "name": "AI Agents",
+        "name": "Revenue Milestones",
         "terms": [
-            "#AIagents", "#AgenticAI",
-            '"AI agent"', '"agentic AI"', '"multi-agent"',
-            '"agent framework"',
+            '"hit $"', '"crossed $"', '"reached $"',
+            '"MRR"', '"monthly recurring"',
+            '"first sale"', '"first revenue"',
         ],
     },
-    # ── LLMs & Models — debates, not announcements ───────────────────
+    # ── Paying Customers — first users, signups, conversions ────────
     {
-        "name": "LLMs",
+        "name": "Paying Customers",
         "terms": [
-            "#LLM", "#GenAI", "#GenerativeAI",
-            '"LLM hallucination"', '"fine-tuning" vs',
-            '"RAG"', '"prompt engineering is"',
+            '"paying user"', '"paying customer"',
+            '"first customer"', '"first user"',
+            '"signed up"', '"converted"',
         ],
     },
-    # ── AI Dev Frameworks — where builders debate tools ──────────────
+    # ── Founder Questions — "what's the best way to..." ─────────────
     {
-        "name": "AI Dev",
+        "name": "Founder Questions",
         "terms": [
-            "#langchain", "#crewai", "#autogen",
-            '"AI SDK"', '"vector database" vs',
+            '"as a founder"', '"best way to get"',
+            '"how do you get"', '"how did you get"',
+            '"what\'s your strategy"', '"any advice on"',
         ],
     },
-    # ── AI Hot Takes & Debates ───────────────────────────────────────
+    # ── Growth & Traction — organic growth stories ──────────────────
     {
-        "name": "AI Debates",
+        "name": "Growth & Traction",
         "terms": [
-            '"AI will replace"', '"AI won\'t replace"',
-            '"unpopular opinion" AI', '"hot take" AI',
-            '"overrated" AI', '"underrated" AI',
+            '"ramen profitable"', '"product market fit"',
+            '"growing fast"', '"growth is"',
+            '"users in"', '"customers in"',
         ],
     },
-    # ── AI Questions & Help ──────────────────────────────────────────
-    {
-        "name": "AI Questions",
-        "terms": [
-            '"should I use" AI', '"what\'s the best" AI',
-            '"anyone tried" AI', '"how are you using" AI',
-            '"struggling with" AI',
-        ],
-    },
-    # ── AI Strategy & Predictions ────────────────────────────────────
-    {
-        "name": "AI Strategy",
-        "terms": [
-            '"the problem with" AI', '"AI hype"',
-            '"AI bubble"', '"the future of" AI',
-            '"AI in 2026"', '"AI is not"',
-        ],
-    },
-    # ── Build in Public — find discussions, not just launches ────────
+    # ── Building in Public — updates without hashtags ───────────────
     {
         "name": "Build in Public",
         "terms": [
-            "#buildinpublic", "#indiehackers",
-            "#shipfast",
+            '"building in public"', '"build in public"',
+            '"shipped"', '"just launched"',
+            '"working on"', '"side project"',
         ],
     },
-    # ── SaaS & Startups — strategy discussions ───────────────────────
+    # ── Startup Struggles — relatable founder pain ──────────────────
     {
-        "name": "SaaS & Startups",
+        "name": "Startup Struggles",
         "terms": [
-            "#saas", "#microsaas", "#startup", "#founders",
-            '"AI wrapper"', '"moat" AI',
-            '"build vs buy" AI', '"open source vs" AI',
+            '"biggest mistake"', '"wish I knew"',
+            '"lessons learned"', '"almost gave up"',
+            '"hardest part of"', '"founder life"',
         ],
     },
-    # ── AI Impact & Ethics — high-engagement controversial topics ────
+    # ── SaaS Tactics — strategy posts that invite discussion ────────
     {
-        "name": "AI Impact",
+        "name": "SaaS Tactics",
         "terms": [
-            '"AI ethics"', '"AI regulation"',
-            '"AI jobs"', '"AI risk"',
-            '"AI safety"',
+            '"cold DMs"', '"cold email"',
+            '"content marketing"', '"SEO for"',
+            '"pricing strategy"', '"churn rate"',
+        ],
+    },
+    # ── Indie Hacker Wins — small victories, relatable posts ────────
+    {
+        "name": "Indie Hacker Wins",
+        "terms": [
+            '"solo founder"', '"indie hacker"',
+            '"bootstrapped"', '"no funding"',
+            '"quit my job"', '"side hustle"',
         ],
     },
 ]
 
 # ──────────────────────────────────────────────────────────────────────
-# CONTENT FILTERS — skip self-promo & announcements, keep discussions
+# CONTENT FILTERS — skip hard-sell promo, keep organic founder posts
 # ──────────────────────────────────────────────────────────────────────
-# Tweets matching these patterns get deprioritized (scored lower).
-# They're not removed entirely in case they spark good discussions.
+# Only penalize aggressive self-promotion (affiliate spam, giveaways).
+# Organic milestone posts ("just hit $3K MRR!") are what we WANT.
 SELF_PROMO_KEYWORDS = [
-    "just launched", "just shipped", "check out my", "i built",
-    "we just released", "now available", "sign up", "join our waitlist",
+    "check out my", "sign up", "join our waitlist",
     "use code", "discount", "giveaway", "drop a follow",
     "link in bio", "subscribe to", "download now",
+    "affiliate", "sponsored", "ad:",
 ]
 SELF_PROMO_PENALTY = 0.3  # multiply engagement score by this
 
